@@ -1335,6 +1335,18 @@ function ea_get_sample_content(): array {
                     'excerpt' => 'Providing immediate assistance and support to rough sleepers in our communities.',
                     'meta'    => [ '_ea_cause_goal' => 8000, '_ea_cause_raised' => 5600 ],
                 ],
+                [
+                    'title'   => 'Youth Mentorship Programme',
+                    'content' => '<p>Our Youth Mentorship Programme connects young people from disadvantaged backgrounds with trained mentors who provide guidance, support, and encouragement.</p><p>Through regular one-to-one sessions, mentors help young people build confidence, set goals, and develop essential life skills. Many of our mentees go on to pursue education and employment opportunities they never thought possible.</p>',
+                    'excerpt' => 'Connecting young people with mentors to build confidence and unlock their potential.',
+                    'meta'    => [ '_ea_cause_goal' => 6000, '_ea_cause_raised' => 4200 ],
+                ],
+                [
+                    'title'   => 'Emergency Relief Fund',
+                    'content' => '<p>When crisis strikes, our Emergency Relief Fund provides rapid financial assistance to families facing unexpected hardship. Whether it\'s a sudden job loss, illness, or domestic emergency, we help bridge the gap.</p><p>Funds can be used for essential bills, emergency repairs, or other urgent needs. Our team works quickly to assess applications and distribute support within 48 hours.</p>',
+                    'excerpt' => 'Rapid financial assistance for families facing unexpected hardship and crisis.',
+                    'meta'    => [ '_ea_cause_goal' => 15000, '_ea_cause_raised' => 9800 ],
+                ],
             ],
         ],
         'ea_event' => [
