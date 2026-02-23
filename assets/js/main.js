@@ -42,8 +42,9 @@ function initMobileNav() {
     const isOpen = toggle.getAttribute('aria-expanded') === 'true';
     toggle.setAttribute('aria-expanded', String(!isOpen));
     menu.classList.toggle('hidden', isOpen);
-    iconMenu.classList.toggle('hidden', !isOpen);
-    iconClose.classList.toggle('hidden', isOpen);
+    // Use style.display for reliable icon toggling
+    iconMenu.style.display = isOpen ? '' : 'none';
+    iconClose.style.display = isOpen ? 'none' : '';
     document.body.style.overflow = isOpen ? '' : 'hidden'; // prevent background scroll
   });
 
@@ -247,7 +248,7 @@ function initBackToTop() {
     z-index: 100;
     width: 2.75rem;
     height: 2.75rem;
-    background: var(--navy);
+    background: #1a2b4a;
     color: white;
     border: none;
     border-radius: 0.75rem;
@@ -271,8 +272,8 @@ function initBackToTop() {
 
   window.addEventListener('scroll', toggle, { passive: true });
   btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-  btn.addEventListener('mouseenter', () => btn.style.background = 'var(--teal)');
-  btn.addEventListener('mouseleave', () => btn.style.background = 'var(--navy)');
+  btn.addEventListener('mouseenter', () => btn.style.background = '#2dd4bf');
+  btn.addEventListener('mouseleave', () => btn.style.background = '#1a2b4a');
 }
 
 /* ============================================================

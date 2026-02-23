@@ -713,3 +713,836 @@ function ea_paypal_url( float $amount = 0, string $item = '', bool $recurring = 
 function ea_paypal_configured(): bool {
     return ! empty( ea_paypal_email() );
 }
+
+
+/* =========================================================
+   15. NEWSLETTER SUBSCRIBERS
+   ========================================================= */
+
+/**
+ * Create the newsletter subscribers table on theme activation.
+ */
+function ea_create_subscribers_table(): void {
+    global $wpdb;
+    $table_name      = $wpdb->prefix . 'ea_newsletter_subscribers';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        email varchar(255) NOT NULL,
+        subscribed_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        ip_address varchar(45) DEFAULT '' NOT NULL,
+        status varchar(20) DEFAULT 'active' NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY email (email)
+    ) $charset_collate;";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( $sql );
+}
+add_action( 'after_switch_theme', 'ea_create_subscribers_table' );
+
+// Also create table on theme load if it doesn't exist (for existing installs)
+add_action( 'init', function() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_newsletter_subscribers';
+    if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) !== $table_name ) {
+        ea_create_subscribers_table();
+    }
+}, 1 );
+
+/**
+ * Handle newsletter signup form submission.
+ */
+add_action( 'admin_post_nopriv_ea_newsletter_signup', 'ea_handle_newsletter_signup' );
+add_action( 'admin_post_ea_newsletter_signup', 'ea_handle_newsletter_signup' );
+
+function ea_handle_newsletter_signup(): void {
+    // Verify nonce
+    if ( ! isset( $_POST['ea_nonce'] ) || ! wp_verify_nonce( $_POST['ea_nonce'], 'ea_newsletter_nonce' ) ) {
+        wp_safe_redirect( add_query_arg( 'newsletter', 'error', wp_get_referer() ?: home_url() ) );
+        exit;
+    }
+
+    // Validate email
+    $email = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+    if ( ! is_email( $email ) ) {
+        wp_safe_redirect( add_query_arg( 'newsletter', 'invalid', wp_get_referer() ?: home_url() ) );
+        exit;
+    }
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_newsletter_subscribers';
+
+    // Check if already subscribed
+    $existing = $wpdb->get_var( $wpdb->prepare(
+        "SELECT id FROM $table_name WHERE email = %s",
+        $email
+    ) );
+
+    if ( $existing ) {
+        wp_safe_redirect( add_query_arg( 'newsletter', 'exists', wp_get_referer() ?: home_url() ) );
+        exit;
+    }
+
+    // Insert subscriber
+    $result = $wpdb->insert(
+        $table_name,
+        [
+            'email'         => $email,
+            'subscribed_at' => current_time( 'mysql' ),
+            'ip_address'    => sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '' ),
+            'status'        => 'active',
+        ],
+        [ '%s', '%s', '%s', '%s' ]
+    );
+
+    if ( $result ) {
+        // Send notification to admin
+        $admin_email = get_option( 'admin_email' );
+        $subject     = sprintf( __( '[%s] New Newsletter Subscriber', 'egalitarian' ), get_bloginfo( 'name' ) );
+        $message     = sprintf( __( 'A new subscriber has joined your newsletter: %s', 'egalitarian' ), $email );
+        wp_mail( $admin_email, $subject, $message );
+
+        wp_safe_redirect( add_query_arg( 'newsletter', 'success', wp_get_referer() ?: home_url() ) );
+    } else {
+        wp_safe_redirect( add_query_arg( 'newsletter', 'error', wp_get_referer() ?: home_url() ) );
+    }
+    exit;
+}
+
+/**
+ * Add admin menu page for newsletter subscribers.
+ */
+add_action( 'admin_menu', function() {
+    add_menu_page(
+        __( 'Newsletter Subscribers', 'egalitarian' ),
+        __( 'Newsletter', 'egalitarian' ),
+        'manage_options',
+        'ea-newsletter',
+        'ea_render_newsletter_admin_page',
+        'dashicons-email-alt',
+        30
+    );
+} );
+
+/**
+ * Render the newsletter admin page.
+ */
+function ea_render_newsletter_admin_page(): void {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_newsletter_subscribers';
+
+    // Handle export
+    if ( isset( $_GET['action'] ) && $_GET['action'] === 'export' && current_user_can( 'manage_options' ) ) {
+        check_admin_referer( 'ea_export_subscribers' );
+        ea_export_subscribers_csv();
+        return;
+    }
+
+    // Handle delete
+    if ( isset( $_POST['action'] ) && $_POST['action'] === 'delete' && isset( $_POST['subscriber_ids'] ) ) {
+        check_admin_referer( 'ea_bulk_subscribers' );
+        $ids = array_map( 'intval', (array) $_POST['subscriber_ids'] );
+        if ( ! empty( $ids ) ) {
+            $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+            $wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE id IN ($placeholders)", $ids ) );
+        }
+    }
+
+    // Get subscribers with pagination
+    $per_page     = 20;
+    $current_page = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
+    $offset       = ( $current_page - 1 ) * $per_page;
+
+    $total_items = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+    $total_pages = ceil( $total_items / $per_page );
+
+    $subscribers = $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM $table_name ORDER BY subscribed_at DESC LIMIT %d OFFSET %d",
+        $per_page,
+        $offset
+    ) );
+
+    ?>
+    <div class="wrap">
+        <h1 class="wp-heading-inline"><?php esc_html_e( 'Newsletter Subscribers', 'egalitarian' ); ?></h1>
+        
+        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=ea-newsletter&action=export' ), 'ea_export_subscribers' ) ); ?>" class="page-title-action">
+            <?php esc_html_e( 'Export CSV', 'egalitarian' ); ?>
+        </a>
+
+        <hr class="wp-header-end">
+
+        <p><?php printf( __( 'Total subscribers: <strong>%d</strong>', 'egalitarian' ), $total_items ); ?></p>
+
+        <?php if ( empty( $subscribers ) ) : ?>
+            <p><?php esc_html_e( 'No subscribers yet.', 'egalitarian' ); ?></p>
+        <?php else : ?>
+            <form method="post">
+                <?php wp_nonce_field( 'ea_bulk_subscribers' ); ?>
+                <div class="tablenav top">
+                    <div class="alignleft actions bulkactions">
+                        <select name="action" id="bulk-action-selector-top">
+                            <option value="-1"><?php esc_html_e( 'Bulk Actions', 'egalitarian' ); ?></option>
+                            <option value="delete"><?php esc_html_e( 'Delete', 'egalitarian' ); ?></option>
+                        </select>
+                        <input type="submit" class="button action" value="<?php esc_attr_e( 'Apply', 'egalitarian' ); ?>">
+                    </div>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <td class="manage-column column-cb check-column">
+                                <input type="checkbox" id="cb-select-all-1">
+                            </td>
+                            <th scope="col"><?php esc_html_e( 'Email', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Subscribed', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Status', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'IP Address', 'egalitarian' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $subscribers as $subscriber ) : ?>
+                        <tr>
+                            <th scope="row" class="check-column">
+                                <input type="checkbox" name="subscriber_ids[]" value="<?php echo esc_attr( $subscriber->id ); ?>">
+                            </th>
+                            <td><strong><?php echo esc_html( $subscriber->email ); ?></strong></td>
+                            <td><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $subscriber->subscribed_at ) ) ); ?></td>
+                            <td>
+                                <span class="<?php echo $subscriber->status === 'active' ? 'dashicons dashicons-yes-alt' : 'dashicons dashicons-dismiss'; ?>" style="color: <?php echo $subscriber->status === 'active' ? '#46b450' : '#dc3232'; ?>;"></span>
+                                <?php echo esc_html( ucfirst( $subscriber->status ) ); ?>
+                            </td>
+                            <td><?php echo esc_html( $subscriber->ip_address ); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </form>
+
+            <?php if ( $total_pages > 1 ) : ?>
+            <div class="tablenav bottom">
+                <div class="tablenav-pages">
+                    <span class="displaying-num"><?php printf( _n( '%s item', '%s items', $total_items, 'egalitarian' ), number_format_i18n( $total_items ) ); ?></span>
+                    <span class="pagination-links">
+                        <?php
+                        echo paginate_links( [
+                            'base'      => add_query_arg( 'paged', '%#%' ),
+                            'format'    => '',
+                            'prev_text' => '&laquo;',
+                            'next_text' => '&raquo;',
+                            'total'     => $total_pages,
+                            'current'   => $current_page,
+                        ] );
+                        ?>
+                    </span>
+                </div>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
+/**
+ * Export subscribers as CSV.
+ */
+function ea_export_subscribers_csv(): void {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_newsletter_subscribers';
+
+    $subscribers = $wpdb->get_results( "SELECT email, subscribed_at, status FROM $table_name ORDER BY subscribed_at DESC" );
+
+    header( 'Content-Type: text/csv; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename=newsletter-subscribers-' . date( 'Y-m-d' ) . '.csv' );
+
+    $output = fopen( 'php://output', 'w' );
+    fputcsv( $output, [ 'Email', 'Subscribed Date', 'Status' ] );
+
+    foreach ( $subscribers as $subscriber ) {
+        fputcsv( $output, [
+            $subscriber->email,
+            $subscriber->subscribed_at,
+            $subscriber->status,
+        ] );
+    }
+
+    fclose( $output );
+    exit;
+}
+
+
+/* =========================================================
+   16. VOLUNTEER APPLICATIONS
+   ========================================================= */
+
+/**
+ * Create the volunteer applications table on theme activation.
+ */
+function ea_create_volunteers_table(): void {
+    global $wpdb;
+    $table_name      = $wpdb->prefix . 'ea_volunteer_applications';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        first_name varchar(100) NOT NULL,
+        last_name varchar(100) NOT NULL,
+        email varchar(255) NOT NULL,
+        phone varchar(50) DEFAULT '' NOT NULL,
+        interests text DEFAULT '' NOT NULL,
+        message text DEFAULT '' NOT NULL,
+        submitted_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        ip_address varchar(45) DEFAULT '' NOT NULL,
+        status varchar(20) DEFAULT 'new' NOT NULL,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( $sql );
+}
+add_action( 'after_switch_theme', 'ea_create_volunteers_table' );
+
+// Also create table on theme load if it doesn't exist
+add_action( 'init', function() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_volunteer_applications';
+    if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) !== $table_name ) {
+        ea_create_volunteers_table();
+    }
+}, 1 );
+
+/**
+ * Handle volunteer form submission.
+ */
+add_action( 'admin_post_nopriv_ea_volunteer_signup', 'ea_handle_volunteer_signup' );
+add_action( 'admin_post_ea_volunteer_signup', 'ea_handle_volunteer_signup' );
+
+function ea_handle_volunteer_signup(): void {
+    // Verify nonce
+    if ( ! isset( $_POST['ea_volunteer_nonce'] ) || ! wp_verify_nonce( $_POST['ea_volunteer_nonce'], 'ea_volunteer_form' ) ) {
+        wp_safe_redirect( add_query_arg( 'volunteer', 'error', wp_get_referer() ?: home_url( '/volunteer' ) ) );
+        exit;
+    }
+
+    // Validate required fields
+    $first_name = isset( $_POST['first_name'] ) ? sanitize_text_field( $_POST['first_name'] ) : '';
+    $last_name  = isset( $_POST['last_name'] ) ? sanitize_text_field( $_POST['last_name'] ) : '';
+    $email      = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+
+    if ( empty( $first_name ) || empty( $last_name ) || ! is_email( $email ) ) {
+        wp_safe_redirect( add_query_arg( 'volunteer', 'invalid', wp_get_referer() ?: home_url( '/volunteer' ) ) );
+        exit;
+    }
+
+    // Sanitize optional fields
+    $phone     = isset( $_POST['phone'] ) ? sanitize_text_field( $_POST['phone'] ) : '';
+    $interests = isset( $_POST['interests'] ) ? array_map( 'sanitize_text_field', (array) $_POST['interests'] ) : [];
+    $message   = isset( $_POST['message'] ) ? sanitize_textarea_field( $_POST['message'] ) : '';
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_volunteer_applications';
+
+    // Insert application
+    $result = $wpdb->insert(
+        $table_name,
+        [
+            'first_name'   => $first_name,
+            'last_name'    => $last_name,
+            'email'        => $email,
+            'phone'        => $phone,
+            'interests'    => implode( ', ', $interests ),
+            'message'      => $message,
+            'submitted_at' => current_time( 'mysql' ),
+            'ip_address'   => sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '' ),
+            'status'       => 'new',
+        ],
+        [ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ]
+    );
+
+    if ( $result ) {
+        // Send notification to admin
+        $admin_email = get_option( 'admin_email' );
+        $subject     = sprintf( __( '[%s] New Volunteer Application', 'egalitarian' ), get_bloginfo( 'name' ) );
+        $body        = sprintf(
+            __( "A new volunteer application has been submitted:\n\nName: %s %s\nEmail: %s\nPhone: %s\nInterests: %s\nMessage: %s", 'egalitarian' ),
+            $first_name, $last_name, $email, $phone, implode( ', ', $interests ), $message
+        );
+        wp_mail( $admin_email, $subject, $body );
+
+        wp_safe_redirect( add_query_arg( 'volunteer', 'success', home_url( '/volunteer' ) . '#volunteer-form' ) );
+    } else {
+        wp_safe_redirect( add_query_arg( 'volunteer', 'error', wp_get_referer() ?: home_url( '/volunteer' ) ) );
+    }
+    exit;
+}
+
+/**
+ * Add admin menu page for volunteer applications.
+ */
+add_action( 'admin_menu', function() {
+    add_menu_page(
+        __( 'Volunteer Applications', 'egalitarian' ),
+        __( 'Volunteers', 'egalitarian' ),
+        'manage_options',
+        'ea-volunteers',
+        'ea_render_volunteers_admin_page',
+        'dashicons-groups',
+        31
+    );
+} );
+
+/**
+ * Render the volunteers admin page.
+ */
+function ea_render_volunteers_admin_page(): void {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_volunteer_applications';
+
+    // Handle export
+    if ( isset( $_GET['action'] ) && $_GET['action'] === 'export' && current_user_can( 'manage_options' ) ) {
+        check_admin_referer( 'ea_export_volunteers' );
+        ea_export_volunteers_csv();
+        return;
+    }
+
+    // Handle status update
+    if ( isset( $_POST['action'] ) && $_POST['action'] === 'update_status' && isset( $_POST['volunteer_id'] ) ) {
+        check_admin_referer( 'ea_update_volunteer_status' );
+        $id     = intval( $_POST['volunteer_id'] );
+        $status = sanitize_text_field( $_POST['new_status'] );
+        if ( in_array( $status, [ 'new', 'contacted', 'approved', 'declined' ], true ) ) {
+            $wpdb->update( $table_name, [ 'status' => $status ], [ 'id' => $id ], [ '%s' ], [ '%d' ] );
+        }
+    }
+
+    // Handle delete
+    if ( isset( $_POST['action'] ) && $_POST['action'] === 'delete' && isset( $_POST['volunteer_ids'] ) ) {
+        check_admin_referer( 'ea_bulk_volunteers' );
+        $ids = array_map( 'intval', (array) $_POST['volunteer_ids'] );
+        if ( ! empty( $ids ) ) {
+            $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+            $wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE id IN ($placeholders)", $ids ) );
+        }
+    }
+
+    // Get applications with pagination
+    $per_page     = 20;
+    $current_page = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
+    $offset       = ( $current_page - 1 ) * $per_page;
+
+    $total_items = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+    $total_pages = ceil( $total_items / $per_page );
+
+    $applications = $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM $table_name ORDER BY submitted_at DESC LIMIT %d OFFSET %d",
+        $per_page,
+        $offset
+    ) );
+
+    $status_colors = [
+        'new'       => '#0073aa',
+        'contacted' => '#f0b849',
+        'approved'  => '#46b450',
+        'declined'  => '#dc3232',
+    ];
+
+    ?>
+    <div class="wrap">
+        <h1 class="wp-heading-inline"><?php esc_html_e( 'Volunteer Applications', 'egalitarian' ); ?></h1>
+        
+        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=ea-volunteers&action=export' ), 'ea_export_volunteers' ) ); ?>" class="page-title-action">
+            <?php esc_html_e( 'Export CSV', 'egalitarian' ); ?>
+        </a>
+
+        <hr class="wp-header-end">
+
+        <p><?php printf( __( 'Total applications: <strong>%d</strong>', 'egalitarian' ), $total_items ); ?></p>
+
+        <?php if ( empty( $applications ) ) : ?>
+            <p><?php esc_html_e( 'No volunteer applications yet.', 'egalitarian' ); ?></p>
+        <?php else : ?>
+            <form method="post">
+                <?php wp_nonce_field( 'ea_bulk_volunteers' ); ?>
+                <div class="tablenav top">
+                    <div class="alignleft actions bulkactions">
+                        <select name="action" id="bulk-action-selector-top">
+                            <option value="-1"><?php esc_html_e( 'Bulk Actions', 'egalitarian' ); ?></option>
+                            <option value="delete"><?php esc_html_e( 'Delete', 'egalitarian' ); ?></option>
+                        </select>
+                        <input type="submit" class="button action" value="<?php esc_attr_e( 'Apply', 'egalitarian' ); ?>">
+                    </div>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <td class="manage-column column-cb check-column">
+                                <input type="checkbox" id="cb-select-all-1">
+                            </td>
+                            <th scope="col"><?php esc_html_e( 'Name', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Email', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Phone', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Interests', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Submitted', 'egalitarian' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Status', 'egalitarian' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $applications as $app ) : ?>
+                        <tr>
+                            <th scope="row" class="check-column">
+                                <input type="checkbox" name="volunteer_ids[]" value="<?php echo esc_attr( $app->id ); ?>">
+                            </th>
+                            <td>
+                                <strong><?php echo esc_html( $app->first_name . ' ' . $app->last_name ); ?></strong>
+                                <?php if ( $app->message ) : ?>
+                                <div class="row-actions">
+                                    <span class="view"><a href="#" onclick="alert('<?php echo esc_js( $app->message ); ?>'); return false;"><?php esc_html_e( 'View Message', 'egalitarian' ); ?></a></span>
+                                </div>
+                                <?php endif; ?>
+                            </td>
+                            <td><a href="mailto:<?php echo esc_attr( $app->email ); ?>"><?php echo esc_html( $app->email ); ?></a></td>
+                            <td><?php echo esc_html( $app->phone ?: '—' ); ?></td>
+                            <td><small><?php echo esc_html( $app->interests ?: '—' ); ?></small></td>
+                            <td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $app->submitted_at ) ) ); ?></td>
+                            <td>
+                                <form method="post" style="display:inline;">
+                                    <?php wp_nonce_field( 'ea_update_volunteer_status' ); ?>
+                                    <input type="hidden" name="action" value="update_status">
+                                    <input type="hidden" name="volunteer_id" value="<?php echo esc_attr( $app->id ); ?>">
+                                    <select name="new_status" onchange="this.form.submit()" style="border-left: 3px solid <?php echo esc_attr( $status_colors[ $app->status ] ?? '#ccc' ); ?>;">
+                                        <option value="new" <?php selected( $app->status, 'new' ); ?>><?php esc_html_e( 'New', 'egalitarian' ); ?></option>
+                                        <option value="contacted" <?php selected( $app->status, 'contacted' ); ?>><?php esc_html_e( 'Contacted', 'egalitarian' ); ?></option>
+                                        <option value="approved" <?php selected( $app->status, 'approved' ); ?>><?php esc_html_e( 'Approved', 'egalitarian' ); ?></option>
+                                        <option value="declined" <?php selected( $app->status, 'declined' ); ?>><?php esc_html_e( 'Declined', 'egalitarian' ); ?></option>
+                                    </select>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </form>
+
+            <?php if ( $total_pages > 1 ) : ?>
+            <div class="tablenav bottom">
+                <div class="tablenav-pages">
+                    <span class="displaying-num"><?php printf( _n( '%s item', '%s items', $total_items, 'egalitarian' ), number_format_i18n( $total_items ) ); ?></span>
+                    <span class="pagination-links">
+                        <?php
+                        echo paginate_links( [
+                            'base'      => add_query_arg( 'paged', '%#%' ),
+                            'format'    => '',
+                            'prev_text' => '&laquo;',
+                            'next_text' => '&raquo;',
+                            'total'     => $total_pages,
+                            'current'   => $current_page,
+                        ] );
+                        ?>
+                    </span>
+                </div>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
+/**
+ * Export volunteer applications as CSV.
+ */
+function ea_export_volunteers_csv(): void {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ea_volunteer_applications';
+
+    $applications = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY submitted_at DESC" );
+
+    header( 'Content-Type: text/csv; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename=volunteer-applications-' . date( 'Y-m-d' ) . '.csv' );
+
+    $output = fopen( 'php://output', 'w' );
+    fputcsv( $output, [ 'First Name', 'Last Name', 'Email', 'Phone', 'Interests', 'Message', 'Submitted', 'Status' ] );
+
+    foreach ( $applications as $app ) {
+        fputcsv( $output, [
+            $app->first_name,
+            $app->last_name,
+            $app->email,
+            $app->phone,
+            $app->interests,
+            $app->message,
+            $app->submitted_at,
+            $app->status,
+        ] );
+    }
+
+    fclose( $output );
+    exit;
+}
+
+
+/* =========================================================
+   17. SAMPLE CONTENT GENERATOR
+   ========================================================= */
+
+/**
+ * Add admin menu page for sample content generator.
+ */
+add_action( 'admin_menu', function() {
+    add_menu_page(
+        __( 'Sample Content', 'egalitarian' ),
+        __( 'Sample Content', 'egalitarian' ),
+        'manage_options',
+        'ea-sample-content',
+        'ea_render_sample_content_page',
+        'dashicons-database-add',
+        80
+    );
+} );
+
+/**
+ * Sample content data.
+ */
+function ea_get_sample_content(): array {
+    return [
+        'ea_cause' => [
+            'label' => __( 'Causes', 'egalitarian' ),
+            'items' => [
+                [
+                    'title'   => 'Food Parcel Distribution',
+                    'content' => '<p>Our food parcel programme provides essential groceries to families facing food insecurity across England. Each parcel contains nutritious, non-perishable items carefully selected to support a balanced diet.</p><p>We work with local food banks, supermarkets, and community donors to source quality products. Our volunteers pack and deliver parcels directly to those in need, ensuring dignity and respect throughout the process.</p>',
+                    'excerpt' => 'Providing essential food parcels to families facing food insecurity across England.',
+                    'meta'    => [ '_ea_cause_goal' => 10000, '_ea_cause_raised' => 7500 ],
+                ],
+                [
+                    'title'   => 'Winter Clothing Drive',
+                    'content' => '<p>As temperatures drop, many vulnerable individuals lack adequate clothing to stay warm. Our Winter Clothing Drive collects and distributes coats, jumpers, hats, gloves, and scarves to those sleeping rough or living in fuel poverty.</p><p>We partner with homeless shelters, community centres, and social services to identify those most in need.</p>',
+                    'excerpt' => 'Collecting and distributing warm clothing to vulnerable individuals during winter months.',
+                    'meta'    => [ '_ea_cause_goal' => 5000, '_ea_cause_raised' => 3200 ],
+                ],
+                [
+                    'title'   => 'Health Education Workshops',
+                    'content' => '<p>Knowledge is power when it comes to health. Our workshops cover essential topics including nutrition, mental health awareness, diabetes prevention, and heart health.</p><p>Led by qualified healthcare professionals and trained volunteers, these sessions are free and open to all community members.</p>',
+                    'excerpt' => 'Free community workshops on nutrition, mental health, and disease prevention.',
+                    'meta'    => [ '_ea_cause_goal' => 3000, '_ea_cause_raised' => 2100 ],
+                ],
+                [
+                    'title'   => 'Homeless Support Initiative',
+                    'content' => '<p>Our Homeless Support Initiative provides immediate assistance to rough sleepers including hot meals, hygiene kits, sleeping bags, and signposting to local services.</p><p>Our outreach teams operate in city centres, building trust and relationships with those on the streets.</p>',
+                    'excerpt' => 'Providing immediate assistance and support to rough sleepers in our communities.',
+                    'meta'    => [ '_ea_cause_goal' => 8000, '_ea_cause_raised' => 5600 ],
+                ],
+            ],
+        ],
+        'ea_event' => [
+            'label' => __( 'Events', 'egalitarian' ),
+            'items' => [
+                [
+                    'title'   => 'Annual Charity Gala Dinner',
+                    'content' => '<p>Join us for an elegant evening of fine dining, live entertainment, and fundraising for our vital programmes. The Gala Dinner brings together supporters, sponsors, and community leaders for an unforgettable night.</p><p>Tickets include a three-course meal, welcome drinks, and live music.</p>',
+                    'excerpt' => 'An elegant evening of dining and fundraising to support our charitable programmes.',
+                    'meta'    => [
+                        '_ea_event_date'     => date( 'Y-m-d', strtotime( '+3 months' ) ),
+                        '_ea_event_time'     => '19:00',
+                        '_ea_event_location' => 'Grand Hotel, London',
+                    ],
+                ],
+                [
+                    'title'   => 'Community Health Fair',
+                    'content' => '<p>A free family-friendly event featuring health screenings, fitness demonstrations, cooking workshops, and information stalls from local health services.</p><p>Get your blood pressure checked, learn healthy recipes, and discover local support services.</p>',
+                    'excerpt' => 'Free health screenings, fitness demos, and wellness information for the whole family.',
+                    'meta'    => [
+                        '_ea_event_date'     => date( 'Y-m-d', strtotime( '+6 weeks' ) ),
+                        '_ea_event_time'     => '10:00',
+                        '_ea_event_location' => 'Community Centre, Birmingham',
+                    ],
+                ],
+                [
+                    'title'   => 'Volunteer Training Day',
+                    'content' => '<p>Interested in volunteering with us? This comprehensive training day covers everything you need to know, from safeguarding and food hygiene to communication skills.</p><p>Lunch and refreshments provided. Certificate of completion awarded.</p>',
+                    'excerpt' => 'Comprehensive training for new volunteers covering all aspects of our work.',
+                    'meta'    => [
+                        '_ea_event_date'     => date( 'Y-m-d', strtotime( '+2 weeks' ) ),
+                        '_ea_event_time'     => '09:30',
+                        '_ea_event_location' => 'The Egalitarian Association HQ',
+                    ],
+                ],
+            ],
+        ],
+        'ea_testimonial' => [
+            'label' => __( 'Testimonials', 'egalitarian' ),
+            'items' => [
+                [
+                    'title'   => 'Sarah M.',
+                    'content' => 'When I lost my job, I didn\'t know how I would feed my children. The Egalitarian Association provided food parcels that kept us going until I found work again. I will never forget their kindness.',
+                    'meta'    => [ '_ea_testimonial_role' => 'Food Parcel Recipient' ],
+                ],
+                [
+                    'title'   => 'James T.',
+                    'content' => 'Volunteering with this organisation has been life-changing. The team is incredibly supportive, and knowing I\'m making a real difference in my community gives me purpose.',
+                    'meta'    => [ '_ea_testimonial_role' => 'Volunteer' ],
+                ],
+                [
+                    'title'   => 'Dr. Amina K.',
+                    'content' => 'As a GP, I\'ve seen firsthand the impact of their health education workshops. Patients come to me better informed and more engaged with their health.',
+                    'meta'    => [ '_ea_testimonial_role' => 'Healthcare Partner' ],
+                ],
+                [
+                    'title'   => 'Michael R.',
+                    'content' => 'After years on the streets, the outreach team helped me access housing and benefits. They treated me with dignity when others looked away.',
+                    'meta'    => [ '_ea_testimonial_role' => 'Homeless Support Beneficiary' ],
+                ],
+            ],
+        ],
+        'post' => [
+            'label' => __( 'Blog Posts', 'egalitarian' ),
+            'items' => [
+                [
+                    'title'   => 'How Your Donations Made a Difference This Winter',
+                    'content' => '<p>As the cold months draw to a close, we want to share the incredible impact your generosity has had on our community. This winter, thanks to your donations, we distributed over 2,000 food parcels and 500 winter coats to families and individuals in need.</p><h2>By the Numbers</h2><ul><li>2,147 food parcels delivered</li><li>523 winter coats distributed</li><li>89 families supported with emergency heating assistance</li></ul><p>Behind every number is a real person whose life was touched by your kindness.</p>',
+                    'excerpt' => 'A look back at the incredible impact of your winter donations on our community.',
+                ],
+                [
+                    'title'   => '5 Simple Ways to Support Your Local Community',
+                    'content' => '<p>Making a difference doesn\'t always require grand gestures. Here are five simple ways you can support your local community starting today.</p><h2>1. Donate Non-Perishable Food</h2><p>Check your cupboards for items you won\'t use. Tinned goods, pasta, and rice are always needed.</p><h2>2. Give Your Time</h2><p>Even a few hours a month can make a huge difference.</p><h2>3. Share on Social Media</h2><p>Raising awareness costs nothing but can help charities reach new supporters.</p>',
+                    'excerpt' => 'Simple, practical ways you can make a positive impact in your community today.',
+                ],
+                [
+                    'title'   => 'Understanding Food Poverty in the UK',
+                    'content' => '<p>Food poverty affects millions of people across the United Kingdom. But what exactly is food poverty, and why does it persist in one of the world\'s wealthiest nations?</p><h2>What is Food Poverty?</h2><p>Food poverty occurs when individuals or families cannot afford or access sufficient nutritious food.</p><h2>The Scale of the Problem</h2><p>Over 2 million people in the UK are severely food insecure. Food bank usage has increased dramatically over the past decade.</p>',
+                    'excerpt' => 'Exploring the causes and scale of food poverty in the UK and what we can do about it.',
+                ],
+                [
+                    'title'   => 'Meet Our Volunteers: The Heart of Our Organisation',
+                    'content' => '<p>Behind every food parcel delivered and every event organised are our incredible volunteers. Today, we\'re shining a spotlight on the people who make our work possible.</p><h2>Why People Volunteer</h2><p>Our volunteers come from all walks of life, united by a desire to give back.</p><h2>Join Our Team</h2><p>We\'re always looking for new volunteers. Whether you can spare a few hours a week or a few hours a month, there\'s a role for you.</p>',
+                    'excerpt' => 'Celebrating the dedicated volunteers who are the heart and soul of our organisation.',
+                ],
+            ],
+        ],
+    ];
+}
+
+/**
+ * Render the sample content admin page.
+ */
+function ea_render_sample_content_page(): void {
+    if ( isset( $_POST['ea_sample_action'] ) && check_admin_referer( 'ea_sample_content' ) ) {
+        $action    = sanitize_text_field( $_POST['ea_sample_action'] );
+        $post_type = sanitize_text_field( $_POST['ea_sample_post_type'] ?? '' );
+        
+        if ( $action === 'add' && $post_type ) {
+            $count = ea_add_sample_content( $post_type );
+            echo '<div class="notice notice-success"><p>' . sprintf( __( 'Added %d sample items.', 'egalitarian' ), $count ) . '</p></div>';
+        } elseif ( $action === 'remove' && $post_type ) {
+            $count = ea_remove_sample_content( $post_type );
+            echo '<div class="notice notice-warning"><p>' . sprintf( __( 'Removed %d sample items.', 'egalitarian' ), $count ) . '</p></div>';
+        }
+    }
+
+    $content_types = ea_get_sample_content();
+    ?>
+    <div class="wrap">
+        <h1><?php esc_html_e( 'Sample Content Generator', 'egalitarian' ); ?></h1>
+        <p><?php esc_html_e( 'Use these buttons to quickly add or remove sample content for development and testing.', 'egalitarian' ); ?></p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px;">
+            <?php foreach ( $content_types as $post_type => $data ) : 
+                $existing = ea_count_sample_content( $post_type );
+            ?>
+            <div style="background: #fff; border: 1px solid #ccd0d4; border-radius: 4px; padding: 20px;">
+                <h2 style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                    <?php echo esc_html( $data['label'] ); ?>
+                    <span style="background: #f0f0f1; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: normal;">
+                        <?php echo esc_html( $existing ); ?> sample
+                    </span>
+                </h2>
+                <p style="color: #646970; margin-bottom: 15px;">
+                    <?php printf( __( '%d items available', 'egalitarian' ), count( $data['items'] ) ); ?>
+                </p>
+                <form method="post" style="display: flex; gap: 10px;">
+                    <?php wp_nonce_field( 'ea_sample_content' ); ?>
+                    <input type="hidden" name="ea_sample_post_type" value="<?php echo esc_attr( $post_type ); ?>">
+                    <button type="submit" name="ea_sample_action" value="add" class="button button-primary">
+                        <?php esc_html_e( 'Add Sample', 'egalitarian' ); ?>
+                    </button>
+                    <?php if ( $existing > 0 ) : ?>
+                    <button type="submit" name="ea_sample_action" value="remove" class="button" onclick="return confirm('Remove all sample content?');">
+                        <?php esc_html_e( 'Remove All', 'egalitarian' ); ?>
+                    </button>
+                    <?php endif; ?>
+                </form>
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #fff8e5; border-left: 4px solid #ffb900;">
+            <p style="margin: 0;"><strong><?php esc_html_e( 'Note:', 'egalitarian' ); ?></strong> <?php esc_html_e( 'Sample content is marked with a special meta field. Use "Remove All" to clean up before launching.', 'egalitarian' ); ?></p>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * Add sample content for a post type.
+ */
+function ea_add_sample_content( string $post_type ): int {
+    $content_types = ea_get_sample_content();
+    if ( ! isset( $content_types[ $post_type ] ) ) return 0;
+
+    $count = 0;
+    foreach ( $content_types[ $post_type ]['items'] as $item ) {
+        $post_id = wp_insert_post( [
+            'post_title'   => $item['title'],
+            'post_content' => $item['content'],
+            'post_excerpt' => $item['excerpt'] ?? '',
+            'post_status'  => 'publish',
+            'post_type'    => $post_type,
+        ] );
+
+        if ( $post_id && ! is_wp_error( $post_id ) ) {
+            update_post_meta( $post_id, '_ea_sample_content', '1' );
+            if ( ! empty( $item['meta'] ) ) {
+                foreach ( $item['meta'] as $key => $value ) {
+                    update_post_meta( $post_id, $key, $value );
+                }
+            }
+            $count++;
+        }
+    }
+    return $count;
+}
+
+/**
+ * Remove sample content for a post type.
+ */
+function ea_remove_sample_content( string $post_type ): int {
+    $posts = get_posts( [
+        'post_type'      => $post_type,
+        'posts_per_page' => -1,
+        'meta_key'       => '_ea_sample_content',
+        'meta_value'     => '1',
+        'fields'         => 'ids',
+    ] );
+
+    $count = 0;
+    foreach ( $posts as $post_id ) {
+        if ( wp_delete_post( $post_id, true ) ) $count++;
+    }
+    return $count;
+}
+
+/**
+ * Count sample content for a post type.
+ */
+function ea_count_sample_content( string $post_type ): int {
+    return count( get_posts( [
+        'post_type'      => $post_type,
+        'posts_per_page' => -1,
+        'meta_key'       => '_ea_sample_content',
+        'meta_value'     => '1',
+        'fields'         => 'ids',
+    ] ) );
+}

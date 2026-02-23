@@ -1,0 +1,249 @@
+================================================================================
+PRIVACY POLICY
+================================================================================
+
+Last updated: [INSERT DATE]
+
+The Egalitarian Association ("we", "us", or "our") is a Charitable Incorporated Organisation (CIO) registered in England. We are committed to protecting your privacy and handling your personal data responsibly.
+
+This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our website, volunteer with us, make donations, or otherwise interact with our organisation.
+
+
+1. WHO WE ARE
+-------------
+
+The Egalitarian Association
+Registered Charity Number: [INSERT CHARITY NUMBER]
+Email: info@theegalitarianassociation.org
+Address: [INSERT ADDRESS]
+
+For any questions about this policy or your personal data, please contact us using the details above.
+
+
+2. INFORMATION WE COLLECT
+-------------------------
+
+We may collect the following types of personal information:
+
+**Information you provide directly:**
+- Name, email address, phone number, and postal address
+- Volunteer application details (interests, availability, skills)
+- Donation information (amount, payment method - we do not store card details)
+- Newsletter subscription preferences
+- Messages and enquiries you send us
+
+**Information collected automatically:**
+- IP address and browser type
+- Pages visited and time spent on our website
+- Referring website or source
+- Device information
+
+
+3. HOW WE USE YOUR INFORMATION
+------------------------------
+
+We use your personal data for the following purposes:
+
+- To process volunteer applications and coordinate volunteering activities
+- To process donations and send receipts
+- To send newsletters and updates about our work (with your consent)
+- To respond to your enquiries and provide support
+- To improve our website and services
+- To comply with legal obligations
+- To prevent fraud and ensure security
+
+
+4. LEGAL BASIS FOR PROCESSING
+-----------------------------
+
+We process your personal data based on:
+
+- **Consent**: When you subscribe to our newsletter or submit a volunteer application
+- **Contractual necessity**: When processing donations
+- **Legitimate interests**: For improving our services and communicating about our charitable work
+- **Legal obligation**: When required by law (e.g., Gift Aid records)
+
+
+5. DATA SHARING
+---------------
+
+We do not sell your personal data. We may share your information with:
+
+- Payment processors (PayPal, Stripe) to process donations securely
+- Email service providers to send newsletters
+- IT service providers who help maintain our website
+- Regulatory bodies when required by law
+
+All third parties are required to protect your data and use it only for specified purposes.
+
+
+6. DATA RETENTION
+-----------------
+
+We retain your personal data only as long as necessary:
+
+- Volunteer records: For the duration of your volunteering plus 3 years
+- Donation records: 7 years (for Gift Aid and accounting purposes)
+- Newsletter subscribers: Until you unsubscribe
+- Website analytics: 26 months
+
+
+7. YOUR RIGHTS
+--------------
+
+Under UK GDPR, you have the right to:
+
+- **Access**: Request a copy of your personal data
+- **Rectification**: Ask us to correct inaccurate data
+- **Erasure**: Request deletion of your data (subject to legal requirements)
+- **Restriction**: Ask us to limit how we use your data
+- **Portability**: Receive your data in a portable format
+- **Object**: Object to certain processing activities
+- **Withdraw consent**: Withdraw consent at any time
+
+To exercise these rights, contact us at info@theegalitarianassociation.org.
+
+
+8. DATA SECURITY
+----------------
+
+We implement appropriate security measures to protect your personal data, including:
+
+- Secure HTTPS encryption on our website
+- Password-protected access to databases
+- Regular security updates and monitoring
+- Limited staff access to personal data
+
+
+9. INTERNATIONAL TRANSFERS
+--------------------------
+
+Your data is primarily stored within the UK/EEA. If we transfer data outside this area, we ensure appropriate safeguards are in place.
+
+
+10. CHANGES TO THIS POLICY
+--------------------------
+
+We may update this Privacy Policy from time to time. Significant changes will be communicated via our website or email.
+
+
+11. COMPLAINTS
+--------------
+
+If you have concerns about how we handle your data, please contact us first. You also have the right to lodge a complaint with the Information Commissioner's Office (ICO):
+
+Website: https://ico.org.uk
+Phone: 0303 123 1113
+
+
+
+================================================================================
+COOKIE POLICY
+================================================================================
+
+Last updated: [INSERT DATE]
+
+
+1. WHAT ARE COOKIES?
+--------------------
+
+Cookies are small text files placed on your device when you visit a website. They help websites function properly, remember your preferences, and provide analytics about how visitors use the site.
+
+
+2. HOW WE USE COOKIES
+---------------------
+
+Our website uses the following types of cookies:
+
+**Essential Cookies**
+These are necessary for the website to function and cannot be disabled. They include:
+- Session cookies to maintain your login state
+- Security cookies to prevent fraud
+- Cookie consent preferences
+
+**Analytics Cookies**
+With your consent, we use analytics cookies to understand how visitors interact with our website. This helps us improve our content and user experience.
+- Google Analytics (if enabled)
+
+**Functional Cookies**
+These remember your preferences and choices:
+- Language preferences
+- Form data (to prevent re-entering information)
+
+
+3. COOKIES WE USE
+-----------------
+
+| Cookie Name          | Purpose                              | Duration    | Type       |
+|---------------------|--------------------------------------|-------------|------------|
+| wordpress_logged_in | Maintains login session              | Session     | Essential  |
+| wp_lang             | Stores language preference           | Session     | Functional |
+| _ga                 | Google Analytics - visitor tracking  | 2 years     | Analytics  |
+| _gid                | Google Analytics - session tracking  | 24 hours    | Analytics  |
+| cookie_consent      | Remembers your cookie preferences    | 1 year      | Essential  |
+
+
+4. MANAGING COOKIES
+-------------------
+
+You can control cookies through:
+
+**Browser settings**: Most browsers allow you to block or delete cookies. See your browser's help section for instructions.
+
+**Our cookie banner**: When you first visit our site, you can choose which cookies to accept.
+
+**Opt-out links**:
+- Google Analytics: https://tools.google.com/dlpage/gaoptout
+
+Note: Blocking essential cookies may affect website functionality.
+
+
+5. THIRD-PARTY COOKIES
+----------------------
+
+Some cookies are set by third-party services we use:
+
+- **Google Analytics**: For website analytics
+- **YouTube**: If we embed videos (only when you play them)
+- **Social media**: If you use share buttons
+
+These third parties have their own privacy policies governing their use of cookies.
+
+
+6. CHANGES TO THIS POLICY
+-------------------------
+
+We may update this Cookie Policy as our website evolves or regulations change. Please check back periodically.
+
+
+7. CONTACT US
+-------------
+
+For questions about our use of cookies, contact:
+
+The Egalitarian Association
+Email: info@theegalitarianassociation.org
+
+
+
+================================================================================
+INSTRUCTIONS FOR USE
+================================================================================
+
+1. Copy the Privacy Policy section above
+2. Create a new page in WordPress called "Privacy Policy"
+3. Paste the content and replace all [INSERT ...] placeholders with your actual information
+4. Publish the page
+
+5. Copy the Cookie Policy section above
+6. Create a new page in WordPress called "Cookie Policy"
+7. Paste the content and replace placeholders
+8. Publish the page
+
+9. Update your footer links to point to these new pages
+
+PLACEHOLDERS TO REPLACE:
+- [INSERT DATE] - e.g., "1 February 2026"
+- [INSERT CHARITY NUMBER] - Your CIO registration number
+- [INSERT ADDRESS] - Your registered address
+

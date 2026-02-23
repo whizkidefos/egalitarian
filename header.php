@@ -60,7 +60,7 @@
                     <span class="w-4 h-4"><?php echo ea_icon( 'heart' ); ?></span>
                     <?php esc_html_e( 'Donate', 'egalitarian' ); ?>
                 </a>
-                <a href="<?php echo esc_url( home_url( '/get-involved' ) ); ?>"
+                <a href="<?php echo esc_url( home_url( '/volunteer' ) ); ?>"
                    class="ea-btn-outline inline-flex items-center gap-2 px-5 py-2.5 border-2 border-navy text-navy font-semibold rounded-xl hover:bg-navy hover:text-white transition-all duration-200">
                     <?php esc_html_e( 'Volunteer', 'egalitarian' ); ?>
                 </a>
@@ -73,7 +73,7 @@
                     aria-controls="ea-mobile-menu"
                     aria-label="<?php esc_attr_e( 'Toggle menu', 'egalitarian' ); ?>">
                 <span class="icon-menu w-6 h-6"><?php echo ea_icon( 'menu' ); ?></span>
-                <span class="icon-close w-6 h-6 hidden"><?php echo ea_icon( 'close' ); ?></span>
+                <span class="icon-close w-6 h-6" style="display:none;"><?php echo ea_icon( 'close' ); ?></span>
             </button>
         </div>
     </div>
@@ -99,7 +99,7 @@
                     <span class="w-5 h-5"><?php echo ea_icon( 'heart' ); ?></span>
                     <?php esc_html_e( 'Donate Now', 'egalitarian' ); ?>
                 </a>
-                <a href="<?php echo esc_url( home_url( '/get-involved' ) ); ?>"
+                <a href="<?php echo esc_url( home_url( '/volunteer' ) ); ?>"
                    class="flex items-center justify-center py-3 border-2 border-navy text-navy font-semibold rounded-xl text-center hover:bg-navy hover:text-white transition-colors">
                     <?php esc_html_e( 'Volunteer', 'egalitarian' ); ?>
                 </a>

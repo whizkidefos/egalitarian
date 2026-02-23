@@ -18,6 +18,23 @@
         <p class="text-white/70 mb-8 max-w-xl mx-auto">
             <?php esc_html_e( 'Get updates on our work, upcoming events, and ways you can help make a difference.', 'egalitarian' ); ?>
         </p>
+        <?php
+        // Newsletter feedback messages
+        $newsletter_status = isset( $_GET['newsletter'] ) ? sanitize_text_field( $_GET['newsletter'] ) : '';
+        if ( $newsletter_status ) :
+            $messages = [
+                'success' => [ 'text' => __( 'Thank you for subscribing! We\'ll be in touch soon.', 'egalitarian' ), 'class' => 'bg-teal/20 border-teal text-teal' ],
+                'exists'  => [ 'text' => __( 'You\'re already subscribed to our newsletter.', 'egalitarian' ), 'class' => 'bg-gold/20 border-gold text-gold' ],
+                'invalid' => [ 'text' => __( 'Please enter a valid email address.', 'egalitarian' ), 'class' => 'bg-red-500/20 border-red-400 text-red-300' ],
+                'error'   => [ 'text' => __( 'Something went wrong. Please try again.', 'egalitarian' ), 'class' => 'bg-red-500/20 border-red-400 text-red-300' ],
+            ];
+            if ( isset( $messages[ $newsletter_status ] ) ) :
+        ?>
+        <div class="mb-6 px-4 py-3 rounded-xl border <?php echo esc_attr( $messages[ $newsletter_status ]['class'] ); ?> max-w-lg mx-auto">
+            <?php echo esc_html( $messages[ $newsletter_status ]['text'] ); ?>
+        </div>
+        <?php endif; endif; ?>
+
         <?php if ( function_exists( 'mc4wp_show_form' ) ) : ?>
             <?php mc4wp_show_form(); ?>
         <?php else : ?>
@@ -95,7 +112,7 @@
                         __( 'Our Causes',  'egalitarian' ) => home_url( '/causes' ),
                         __( 'Events',      'egalitarian' ) => home_url( '/events' ),
                         __( 'News',        'egalitarian' ) => home_url( '/news' ),
-                        __( 'Get Involved','egalitarian' ) => home_url( '/get-involved' ),
+                        __( 'Volunteer','egalitarian' ) => home_url( '/volunteer' ),
                         __( 'Donate',      'egalitarian' ) => home_url( '/donate' ),
                     ];
                     foreach ( $quick_links as $label => $url ) :
@@ -122,23 +139,38 @@
                 <?php else : ?>
                 <ul class="space-y-2.5">
                     <?php
-                    $work_links = [
-                        __( 'Food Parcels',     'egalitarian' ) => home_url( '/causes/food-parcels' ),
-                        __( 'Winter Clothing',  'egalitarian' ) => home_url( '/causes/winter-clothing' ),
-                        __( 'Health Education', 'egalitarian' ) => home_url( '/causes/health-education' ),
-                        __( 'Homeless Support', 'egalitarian' ) => home_url( '/causes/homeless-support' ),
-                        __( 'Public Health Talks', 'egalitarian' ) => home_url( '/causes/health-talks' ),
-                    ];
-                    foreach ( $work_links as $label => $url ) :
+                    // Dynamically fetch actual cause posts
+                    $causes_query = new WP_Query( [
+                        'post_type'      => 'ea_cause',
+                        'posts_per_page' => 5,
+                        'orderby'        => 'menu_order',
+                        'order'          => 'ASC',
+                        'post_status'    => 'publish',
+                    ] );
+                    if ( $causes_query->have_posts() ) :
+                        while ( $causes_query->have_posts() ) : $causes_query->the_post();
                     ?>
                     <li>
-                        <a href="<?php echo esc_url( $url ); ?>"
+                        <a href="<?php the_permalink(); ?>"
                            class="text-white/60 hover:text-white text-sm flex items-center gap-2 transition-colors duration-150 hover:translate-x-1 group">
                             <span class="w-3 h-3 text-teal opacity-0 group-hover:opacity-100 transition-opacity"><?php echo ea_icon( 'arrow' ); ?></span>
-                            <?php echo esc_html( $label ); ?>
+                            <?php the_title(); ?>
                         </a>
                     </li>
-                    <?php endforeach; ?>
+                    <?php
+                        endwhile;
+                        wp_reset_postdata();
+                    else :
+                        // Fallback: link to main causes page
+                    ?>
+                    <li>
+                        <a href="<?php echo esc_url( home_url( '/causes' ) ); ?>"
+                           class="text-white/60 hover:text-white text-sm flex items-center gap-2 transition-colors duration-150 hover:translate-x-1 group">
+                            <span class="w-3 h-3 text-teal opacity-0 group-hover:opacity-100 transition-opacity"><?php echo ea_icon( 'arrow' ); ?></span>
+                            <?php esc_html_e( 'View All Causes', 'egalitarian' ); ?>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
                 <?php endif; ?>
             </div>

@@ -38,8 +38,8 @@ get_header();
           <p><?php esc_html_e('Our work is driven by volunteers and supporters who believe that everyone — regardless of their circumstances — deserves dignity, safety, and access to good health.','egalitarian'); ?></p>
         </div>
         <div class="ea-reveal mt-8 flex flex-wrap gap-4 opacity-0" style="animation-delay:.3s">
-          <a href="<?php echo esc_url(home_url('/get-involved')); ?>" class="inline-flex items-center gap-2 px-6 py-3 bg-navy text-white font-bold rounded-xl hover:bg-navy-light hover:-translate-y-0.5 transition-all">
-            <?php esc_html_e('Get Involved','egalitarian'); ?>
+          <a href="<?php echo esc_url(home_url('/volunteer')); ?>" class="inline-flex items-center gap-2 px-6 py-3 bg-navy text-white font-bold rounded-xl hover:bg-navy-light hover:-translate-y-0.5 transition-all">
+            <?php esc_html_e('Volunteer','egalitarian'); ?>
             <span class="w-4 h-4"><?php echo ea_icon('arrow'); ?></span>
           </a>
           <a href="<?php echo esc_url(home_url('/donate')); ?>" class="inline-flex items-center gap-2 px-6 py-3 bg-gold text-navy font-bold rounded-xl hover:bg-gold-light hover:-translate-y-0.5 transition-all">
