@@ -55,12 +55,12 @@
 
             <!-- Desktop CTA -->
             <div class="hidden lg:flex items-center gap-3">
-                <a href="<?php echo esc_url( get_page_link( get_page_by_path( 'donate' ) ) ?: '#donate' ); ?>"
+                <a href="<?php echo esc_url( home_url( '/donate' ) ); ?>"
                    class="ea-btn-primary inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-navy font-bold rounded-xl hover:bg-gold-dark transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
                     <span class="w-4 h-4"><?php echo ea_icon( 'heart' ); ?></span>
                     <?php esc_html_e( 'Donate', 'egalitarian' ); ?>
                 </a>
-                <a href="<?php echo esc_url( get_page_link( get_page_by_path( 'volunteer' ) ) ?: '#volunteer' ); ?>"
+                <a href="<?php echo esc_url( home_url( '/get-involved' ) ); ?>"
                    class="ea-btn-outline inline-flex items-center gap-2 px-5 py-2.5 border-2 border-navy text-navy font-semibold rounded-xl hover:bg-navy hover:text-white transition-all duration-200">
                     <?php esc_html_e( 'Volunteer', 'egalitarian' ); ?>
                 </a>
@@ -94,12 +94,12 @@
             ] );
             ?>
             <div class="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-100">
-                <a href="#donate"
+                <a href="<?php echo esc_url( home_url( '/donate' ) ); ?>"
                    class="flex items-center justify-center gap-2 py-3 bg-gold text-navy font-bold rounded-xl text-center hover:bg-gold-dark transition-colors">
                     <span class="w-5 h-5"><?php echo ea_icon( 'heart' ); ?></span>
                     <?php esc_html_e( 'Donate Now', 'egalitarian' ); ?>
                 </a>
-                <a href="#volunteer"
+                <a href="<?php echo esc_url( home_url( '/get-involved' ) ); ?>"
                    class="flex items-center justify-center py-3 border-2 border-navy text-navy font-semibold rounded-xl text-center hover:bg-navy hover:text-white transition-colors">
                     <?php esc_html_e( 'Volunteer', 'egalitarian' ); ?>
                 </a>

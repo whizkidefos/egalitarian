@@ -5,7 +5,8 @@
  */
 get_header();
 
-$archive_title = get_the_archive_title();
+// Strip the <span> wrapper WordPress adds around the post type name
+$archive_title = wp_strip_all_tags( get_the_archive_title() );
 $archive_desc  = get_the_archive_description();
 ?>
 

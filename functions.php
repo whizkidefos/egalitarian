@@ -431,3 +431,285 @@ function ea_fallback_menu(): void {
     }
     echo '</ul>';
 }
+
+
+/* =========================================================
+   10. PAGE TEMPLATE REGISTRATION
+   ========================================================= */
+
+/**
+ * Register custom page templates so they appear in the
+ * WordPress "Page Attributes > Template" dropdown.
+ */
+add_filter( 'theme_page_templates', function ( $templates ) {
+    $templates['page-about.php']       = __( 'About Page',       'egalitarian' );
+    $templates['page-causes.php']      = __( 'Causes Page',      'egalitarian' );
+    $templates['page-events.php']      = __( 'Events Page',      'egalitarian' );
+    $templates['page-news.php']        = __( 'News Page',        'egalitarian' );
+    $templates['page-donate.php']      = __( 'Donate Page',      'egalitarian' );
+    $templates['page-get-involved.php']= __( 'Get Involved Page','egalitarian' );
+    $templates['page-legal.php']       = __( 'Legal Page',       'egalitarian' );
+    return $templates;
+} );
+
+
+/* =========================================================
+   11. EVENT POST META BOXES
+   ========================================================= */
+
+add_action( 'add_meta_boxes', function () {
+    add_meta_box(
+        'ea_event_details',
+        __( 'Event Details', 'egalitarian' ),
+        'ea_event_meta_box',
+        'ea_event',
+        'side',
+        'high'
+    );
+} );
+
+function ea_event_meta_box( WP_Post $post ): void {
+    wp_nonce_field( 'ea_event_meta', 'ea_event_nonce' );
+    $date     = get_post_meta( $post->ID, '_ea_event_date',     true );
+    $location = get_post_meta( $post->ID, '_ea_event_location', true );
+    $time     = get_post_meta( $post->ID, '_ea_event_time',     true );
+    ?>
+    <p style="margin-bottom:8px">
+        <label for="ea_event_date" style="font-weight:600;display:block;margin-bottom:4px"><?php esc_html_e( 'Date', 'egalitarian' ); ?></label>
+        <input type="text" id="ea_event_date" name="ea_event_date" value="<?php echo esc_attr( $date ); ?>"
+               placeholder="e.g. Saturday 15 March 2025" style="width:100%">
+    </p>
+    <p style="margin-bottom:8px">
+        <label for="ea_event_time" style="font-weight:600;display:block;margin-bottom:4px"><?php esc_html_e( 'Time', 'egalitarian' ); ?></label>
+        <input type="text" id="ea_event_time" name="ea_event_time" value="<?php echo esc_attr( $time ); ?>"
+               placeholder="e.g. 10:00am – 2:00pm" style="width:100%">
+    </p>
+    <p>
+        <label for="ea_event_location" style="font-weight:600;display:block;margin-bottom:4px"><?php esc_html_e( 'Location', 'egalitarian' ); ?></label>
+        <input type="text" id="ea_event_location" name="ea_event_location" value="<?php echo esc_attr( $location ); ?>"
+               placeholder="e.g. Community Hall, London" style="width:100%">
+    </p>
+    <?php
+}
+
+add_action( 'save_post_ea_event', function ( int $post_id ) {
+    if ( ! isset( $_POST['ea_event_nonce'] ) || ! wp_verify_nonce( $_POST['ea_event_nonce'], 'ea_event_meta' ) ) return;
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+    if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+    foreach ( [ 'ea_event_date', 'ea_event_time', 'ea_event_location' ] as $field ) {
+        if ( isset( $_POST[ $field ] ) ) {
+            update_post_meta( $post_id, '_' . $field, sanitize_text_field( $_POST[ $field ] ) );
+        }
+    }
+} );
+
+
+/* =========================================================
+   12. ARCHIVE TITLE — strip <span> wrapper
+   ========================================================= */
+add_filter( 'get_the_archive_title', function ( string $title ): string {
+    return wp_strip_all_tags( $title );
+} );
+
+
+/* =========================================================
+   13. PAYPAL DONATION — Customizer settings + handler
+   ========================================================= */
+add_action( 'customize_register', function ( WP_Customize_Manager $wp_customize ) {
+
+    // Panel
+    $wp_customize->add_panel( 'ea_settings', [
+        'title'    => __( 'Egalitarian Association', 'egalitarian' ),
+        'priority' => 30,
+    ] );
+
+    // ── Contact section ──────────────────────────────────
+    $wp_customize->add_section( 'ea_contact', [
+        'title' => __( 'Contact Details', 'egalitarian' ),
+        'panel' => 'ea_settings',
+    ] );
+    foreach ( [
+        'ea_email'   => [ 'label' => __( 'Email Address', 'egalitarian' ),   'default' => 'info@theegalitarianassociation.org' ],
+        'ea_phone'   => [ 'label' => __( 'Phone Number',  'egalitarian' ),   'default' => '' ],
+        'ea_address' => [ 'label' => __( 'Address',       'egalitarian' ),   'default' => '' ],
+        'ea_charity_number' => [ 'label' => __( 'Charity Registration No.', 'egalitarian' ), 'default' => '' ],
+    ] as $id => $args ) {
+        $wp_customize->add_setting( $id, [ 'default' => $args['default'], 'sanitize_callback' => 'sanitize_text_field' ] );
+        $wp_customize->add_control( $id, [ 'label' => $args['label'], 'section' => 'ea_contact', 'type' => 'text' ] );
+    }
+
+    // ── Social section ────────────────────────────────────
+    $wp_customize->add_section( 'ea_social', [
+        'title' => __( 'Social Media', 'egalitarian' ),
+        'panel' => 'ea_settings',
+    ] );
+    foreach ( [
+        'ea_social_facebook' => __( 'Facebook URL', 'egalitarian' ),
+        'ea_social_twitter'  => __( 'Twitter / X URL', 'egalitarian' ),
+        'ea_social_linkedin' => __( 'LinkedIn URL', 'egalitarian' ),
+        'ea_social_instagram'=> __( 'Instagram URL', 'egalitarian' ),
+    ] as $id => $label ) {
+        $wp_customize->add_setting( $id, [ 'default' => '', 'sanitize_callback' => 'esc_url_raw' ] );
+        $wp_customize->add_control( $id, [ 'label' => $label, 'section' => 'ea_social', 'type' => 'url' ] );
+    }
+
+    // ── PayPal section ────────────────────────────────────
+    $wp_customize->add_section( 'ea_paypal', [
+        'title'       => __( 'PayPal Donations', 'egalitarian' ),
+        'panel'       => 'ea_settings',
+        'description' => __( 'Configure PayPal donation settings. Use Sandbox for testing, Live for production.', 'egalitarian' ),
+    ] );
+
+    // Mode toggle
+    $wp_customize->add_setting( 'ea_paypal_mode', [ 'default' => 'sandbox', 'sanitize_callback' => 'sanitize_text_field' ] );
+    $wp_customize->add_control( 'ea_paypal_mode', [
+        'label'   => __( 'PayPal Mode', 'egalitarian' ),
+        'section' => 'ea_paypal',
+        'type'    => 'select',
+        'choices' => [
+            'sandbox' => __( 'Sandbox (Testing)', 'egalitarian' ),
+            'live'    => __( 'Live (Production)',  'egalitarian' ),
+        ],
+    ] );
+
+    // Sandbox
+    $wp_customize->add_setting( 'ea_paypal_sandbox_email', [ 'default' => '', 'sanitize_callback' => 'sanitize_email' ] );
+    $wp_customize->add_control( 'ea_paypal_sandbox_email', [
+        'label'       => __( 'Sandbox PayPal Email', 'egalitarian' ),
+        'description' => __( 'Your PayPal sandbox business account email.', 'egalitarian' ),
+        'section'     => 'ea_paypal',
+        'type'        => 'email',
+    ] );
+
+    // Live
+    $wp_customize->add_setting( 'ea_paypal_live_email', [ 'default' => '', 'sanitize_callback' => 'sanitize_email' ] );
+    $wp_customize->add_control( 'ea_paypal_live_email', [
+        'label'       => __( 'Live PayPal Email', 'egalitarian' ),
+        'description' => __( 'Your real PayPal business account email.', 'egalitarian' ),
+        'section'     => 'ea_paypal',
+        'type'        => 'email',
+    ] );
+
+    // Currency
+    $wp_customize->add_setting( 'ea_paypal_currency', [ 'default' => 'GBP', 'sanitize_callback' => 'sanitize_text_field' ] );
+    $wp_customize->add_control( 'ea_paypal_currency', [
+        'label'   => __( 'Currency Code', 'egalitarian' ),
+        'section' => 'ea_paypal',
+        'type'    => 'select',
+        'choices' => [ 'GBP' => 'GBP (£)', 'USD' => 'USD ($)', 'EUR' => 'EUR (€)' ],
+    ] );
+
+    // Announcement bar
+    $wp_customize->add_section( 'ea_announcement_sec', [
+        'title' => __( 'Announcement Bar', 'egalitarian' ),
+        'panel' => 'ea_settings',
+    ] );
+    $wp_customize->add_setting( 'ea_announcement', [ 'default' => '', 'sanitize_callback' => 'wp_kses_post' ] );
+    $wp_customize->add_control( 'ea_announcement', [
+        'label'   => __( 'Announcement text (leave blank to hide)', 'egalitarian' ),
+        'section' => 'ea_announcement_sec',
+        'type'    => 'textarea',
+    ] );
+
+    // Hero content
+    $wp_customize->add_section( 'ea_hero_sec', [
+        'title' => __( 'Homepage Hero', 'egalitarian' ),
+        'panel' => 'ea_settings',
+    ] );
+    foreach ( [
+        'ea_hero_heading'   => [ 'label' => __( 'Hero Heading', 'egalitarian' ),     'default' => 'Serving Community,<br>Changing Lives' ],
+        'ea_hero_subtext'   => [ 'label' => __( 'Hero Subtext', 'egalitarian' ),     'default' => 'We provide food parcels, essential clothing and health education to those in need across England.' ],
+        'ea_hero_cta_label' => [ 'label' => __( 'CTA Button Label', 'egalitarian' ), 'default' => 'Donate Today' ],
+    ] as $id => $args ) {
+        $wp_customize->add_setting( $id, [ 'default' => $args['default'], 'sanitize_callback' => 'wp_kses_post' ] );
+        $wp_customize->add_control( $id, [ 'label' => $args['label'], 'section' => 'ea_hero_sec', 'type' => 'text' ] );
+    }
+
+    // Stats
+    $wp_customize->add_section( 'ea_stats_sec', [
+        'title' => __( 'Impact Statistics', 'egalitarian' ),
+        'panel' => 'ea_settings',
+    ] );
+    for ( $n = 1; $n <= 4; $n++ ) {
+        $wp_customize->add_setting( "ea_stat{$n}_value", [ 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ] );
+        $wp_customize->add_setting( "ea_stat{$n}_label", [ 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ] );
+        $wp_customize->add_control( "ea_stat{$n}_value", [ 'label' => "Stat {$n} Value (e.g. 2,500+)", 'section' => 'ea_stats_sec', 'type' => 'text' ] );
+        $wp_customize->add_control( "ea_stat{$n}_label", [ 'label' => "Stat {$n} Label", 'section' => 'ea_stats_sec', 'type' => 'text' ] );
+    }
+} );
+
+
+/* =========================================================
+   14. PAYPAL HELPER FUNCTIONS
+   ========================================================= */
+
+/**
+ * Get the active PayPal email based on current mode.
+ */
+function ea_paypal_email(): string {
+    $mode = get_theme_mod( 'ea_paypal_mode', 'sandbox' );
+    return $mode === 'live'
+        ? (string) get_theme_mod( 'ea_paypal_live_email',    '' )
+        : (string) get_theme_mod( 'ea_paypal_sandbox_email', '' );
+}
+
+/**
+ * Get the PayPal base URL based on current mode.
+ */
+function ea_paypal_base_url(): string {
+    $mode = get_theme_mod( 'ea_paypal_mode', 'sandbox' );
+    return $mode === 'live'
+        ? 'https://www.paypal.com/donate'
+        : 'https://www.sandbox.paypal.com/donate';
+}
+
+/**
+ * Build a complete PayPal donate URL.
+ *
+ * @param float  $amount   Pre-filled amount (0 = let donor choose).
+ * @param string $item     Description shown on PayPal checkout.
+ * @param bool   $recurring Whether to set up monthly giving.
+ */
+function ea_paypal_url( float $amount = 0, string $item = '', bool $recurring = false ): string {
+    $email    = ea_paypal_email();
+    $currency = get_theme_mod( 'ea_paypal_currency', 'GBP' );
+
+    if ( ! $email ) {
+        // No PayPal configured — fall back to donate page
+        return home_url( '/donate' );
+    }
+
+    $args = [
+        'business'      => $email,
+        'item_name'     => $item ?: get_bloginfo( 'name' ) . ' — Donation',
+        'currency_code' => $currency,
+        'no_note'       => '0',
+        'return'        => home_url( '/thank-you' ),
+        'cancel_return' => home_url( '/donate' ),
+        'notify_url'    => home_url( '/?ea_paypal_ipn=1' ),
+    ];
+
+    if ( $recurring ) {
+        $args['cmd']           = '_xclick-subscriptions';
+        $args['a3']            = $amount ?: '';
+        $args['p3']            = '1';
+        $args['t3']            = 'M'; // Monthly
+        $args['src']           = '1'; // Recurring
+        $args['sra']           = '1';
+    } else {
+        $args['cmd']           = '_donations';
+        if ( $amount > 0 ) {
+            $args['amount']    = number_format( $amount, 2, '.', '' );
+        }
+    }
+
+    return ea_paypal_base_url() . '?' . http_build_query( $args );
+}
+
+/**
+ * Is PayPal configured?
+ */
+function ea_paypal_configured(): bool {
+    return ! empty( ea_paypal_email() );
+}

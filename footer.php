@@ -62,10 +62,10 @@
                 <div class="flex items-center gap-3">
                     <?php
                     $socials = [
-                        'facebook' => get_theme_mod( 'ea_social_facebook', '#' ),
-                        'twitter'  => get_theme_mod( 'ea_social_twitter',  '#' ),
-                        'linkedin' => get_theme_mod( 'ea_social_linkedin', '#' ),
-                        'email'    => 'mailto:' . get_theme_mod( 'ea_email', get_option('admin_email') ),
+                        'facebook'  => get_theme_mod( 'ea_social_facebook',  '' ),
+                        'twitter'   => get_theme_mod( 'ea_social_twitter',   '' ),
+                        'linkedin'  => get_theme_mod( 'ea_social_linkedin',  '' ),
+                        'email'     => 'mailto:' . get_theme_mod( 'ea_email', 'info@theegalitarianassociation.org' ),
                     ];
                     foreach ( $socials as $name => $url ) :
                         if ( ! $url || $url === '#' ) continue;
@@ -167,7 +167,7 @@
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php $email = get_theme_mod( 'ea_email', get_option( 'admin_email' ) ); ?>
+                    <?php $email = get_theme_mod( 'ea_email', 'info@theegalitarianassociation.org' ); ?>
                     <li>
                         <a href="mailto:<?php echo esc_attr( $email ); ?>"
                            class="flex items-center gap-3 text-white/60 hover:text-white text-sm transition-colors">
