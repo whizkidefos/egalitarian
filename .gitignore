@@ -1,0 +1,8 @@
+node_modules/
+public/
+vendor/
+
+.env
+.env.local
+.env.development
+.env.test
