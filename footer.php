@@ -184,7 +184,7 @@
                     <?php dynamic_sidebar( 'footer-3' ); ?>
                 <?php else : ?>
                 <ul class="space-y-4">
-                    <?php if ( $addr = get_theme_mod( 'ea_address', '' ) ) : ?>
+                    <?php if ( $addr = get_theme_mod( 'ea_address', '15 Aqueduct Way, Manchester, M30 0YU' ) ) : ?>
                     <li class="flex items-start gap-3 text-white/60 text-sm">
                         <span class="w-5 h-5 text-teal mt-0.5 flex-shrink-0"><?php echo ea_icon( 'location' ); ?></span>
                         <span><?php echo wp_kses_post( $addr ); ?></span>
@@ -211,7 +211,7 @@
                 <?php endif; ?>
 
                 <!-- Charity reg -->
-                <?php if ( $reg = get_theme_mod( 'ea_charity_number', '' ) ) : ?>
+                <?php if ( $reg = get_theme_mod( 'ea_charity_number', '1216794' ) ) : ?>
                 <div class="mt-6 p-3 rounded-lg bg-white/5 border border-white/10">
                     <p class="text-white/40 text-xs">
                         <?php esc_html_e( 'Registered Charity', 'egalitarian' ); ?><br>

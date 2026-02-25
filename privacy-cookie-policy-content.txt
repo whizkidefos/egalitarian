@@ -13,9 +13,9 @@ This Privacy Policy explains how we collect, use, store, and protect your person
 -------------
 
 The Egalitarian Association
-Registered Charity Number: [INSERT CHARITY NUMBER]
+Registered Charity Number: 1216794
 Email: info@theegalitarianassociation.org
-Address: [INSERT ADDRESS]
+Address: 15 Aqueduct Way, Manchester, M30 0YU
 
 For any questions about this policy or your personal data, please contact us using the details above.
 
@@ -141,7 +141,7 @@ Phone: 0303 123 1113
 COOKIE POLICY
 ================================================================================
 
-Last updated: [INSERT DATE]
+Last updated: 23 February 2026
 
 
 1. WHAT ARE COOKIES?
@@ -242,8 +242,8 @@ INSTRUCTIONS FOR USE
 
 9. Update your footer links to point to these new pages
 
-PLACEHOLDERS TO REPLACE:
-- [INSERT DATE] - e.g., "1 February 2026"
-- [INSERT CHARITY NUMBER] - Your CIO registration number
-- [INSERT ADDRESS] - Your registered address
+All placeholders have been filled in with the charity details:
+- Charity Number: 1216794
+- Address: 15 Aqueduct Way, Manchester, M30 0YU
+- Email: info@theegalitarianassociation.org
 
