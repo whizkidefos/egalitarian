@@ -121,44 +121,46 @@ $image_id  = $args['image_id']  ?? 0;
 
             </div>
 
-            <!-- Right column: Decorative feature cards (desktop only) -->
+            <!-- Right column: Custom illustration (desktop only) -->
             <div class="hidden lg:block relative" aria-hidden="true">
-                <div class="ea-reveal opacity-0 relative" style="animation-delay: 0.5s;">
-                    <!-- Floating cards showcasing impact -->
-                    <div class="absolute top-0 right-0 w-64 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-teal/30 flex items-center justify-center">
-                                <span class="text-teal"><?php echo ea_icon( 'heart' ); ?></span>
-                            </div>
-                            <span class="text-white font-semibold text-sm"><?php esc_html_e( 'Food Support', 'egalitarian' ); ?></span>
-                        </div>
-                        <p class="text-white/70 text-sm leading-relaxed"><?php esc_html_e( 'Delivering nutritious food parcels to families every week.', 'egalitarian' ); ?></p>
-                    </div>
+                <div class="ea-reveal opacity-0 relative min-h-[32rem] flex items-center justify-center" style="animation-delay: 0.5s;">
+                    <div class="relative w-full max-w-[34rem] h-[30rem]">
+                        <div class="absolute inset-10 rounded-full bg-white/5"></div>
+                        <div class="absolute inset-20 rounded-full bg-white/5"></div>
 
-                    <div class="absolute top-32 right-20 w-56 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-gold/30 flex items-center justify-center">
-                                <span class="text-gold"><?php echo ea_icon( 'users' ); ?></span>
-                            </div>
-                            <span class="text-white font-semibold text-sm"><?php esc_html_e( 'Community', 'egalitarian' ); ?></span>
+                        <div class="absolute top-10 left-14 w-36 h-36 flex items-center justify-center">
+                            <svg class="w-full h-full text-teal drop-shadow-2xl" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.593c-.525-.438-3.32-2.853-5.127-4.81C4.516 14.275 3 11.918 3 9.5A5.5 5.5 0 0 1 12 5.572 5.5 5.5 0 0 1 21 9.5c0 2.418-1.516 4.775-3.873 7.283C15.32 18.74 12.525 21.155 12 21.593z"/>
+                            </svg>
                         </div>
-                        <p class="text-white/70 text-sm leading-relaxed"><?php esc_html_e( 'Building stronger communities through compassion.', 'egalitarian' ); ?></p>
-                    </div>
 
-                    <div class="absolute top-64 right-8 w-60 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 transform rotate-1 hover:rotate-0 transition-transform duration-300">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                <span class="text-white"><?php echo ea_icon( 'calendar' ); ?></span>
+                        <div class="absolute top-24 right-8 w-60 bg-white/12 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-xl">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="w-3 h-3 rounded-full bg-teal"></span>
+                                <span class="text-white font-semibold text-sm"><?php esc_html_e( 'Food Support', 'egalitarian' ); ?></span>
                             </div>
-                            <span class="text-white font-semibold text-sm"><?php esc_html_e( 'Health Education', 'egalitarian' ); ?></span>
+                            <p class="text-white/75 text-sm leading-relaxed"><?php esc_html_e( 'Delivering nutritious food parcels to families every week.', 'egalitarian' ); ?></p>
                         </div>
-                        <p class="text-white/70 text-sm leading-relaxed"><?php esc_html_e( 'Free workshops empowering healthier lifestyles.', 'egalitarian' ); ?></p>
-                    </div>
 
-                    <!-- Decorative connector lines -->
-                    <svg class="absolute top-20 right-48 w-32 h-48 text-teal/30" viewBox="0 0 100 150" fill="none" stroke="currentColor" stroke-width="1">
-                        <path d="M80 0 Q50 50 70 75 Q90 100 60 150" stroke-dasharray="4 4"/>
-                    </svg>
+                        <div class="absolute top-52 right-20 w-52 bg-white/12 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-lg">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="w-3 h-3 rounded-full bg-gold"></span>
+                                <span class="text-white font-semibold text-sm"><?php esc_html_e( 'Community', 'egalitarian' ); ?></span>
+                            </div>
+                            <p class="text-white/75 text-sm leading-relaxed"><?php esc_html_e( 'Building stronger communities through compassion.', 'egalitarian' ); ?></p>
+                        </div>
+
+                        <div class="absolute top-[20.5rem] right-12 w-56 bg-white/12 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-lg">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="w-3 h-3 rounded-full bg-white/70"></span>
+                                <span class="text-white font-semibold text-sm"><?php esc_html_e( 'Health Education', 'egalitarian' ); ?></span>
+                            </div>
+                            <p class="text-white/75 text-sm leading-relaxed"><?php esc_html_e( 'Free workshops empowering healthier lifestyles.', 'egalitarian' ); ?></p>
+                        </div>
+
+                        <div class="absolute top-52 right-4 w-10 h-10 rounded-full bg-navy/60"></div>
+                        <div class="absolute top-[22.5rem] right-0 w-6 h-6 rounded-full bg-teal"></div>
+                    </div>
                 </div>
             </div>
 

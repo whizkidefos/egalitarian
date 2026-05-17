@@ -34,6 +34,7 @@ get_header();
         <h2 class="ea-reveal text-navy font-extrabold text-3xl sm:text-4xl mb-6 opacity-0" style="animation-delay:.1s"><?php esc_html_e('Serving Community, Changing Lives','egalitarian'); ?></h2>
         <div class="ea-reveal opacity-0 space-y-4 text-gray-600 leading-relaxed" style="animation-delay:.2s">
           <p><?php esc_html_e('The Egalitarian Association is a registered Charitable Incorporated Organisation based in England. We exist to prevent and relieve poverty, and to preserve and protect the health of the public through education and community outreach.','egalitarian'); ?></p>
+          <p><?php esc_html_e('The Association also serves as a special purpose vehicle for Saxon Deck Limited (National Association of Seadogs), supporting its charitable and community-focused initiatives in alignment with our shared values and objectives.','egalitarian'); ?></p>
           <p><?php esc_html_e('We provide food parcels and distribute essential items such as sleeping bags and winter coats to those who are homeless or in need. We also deliver public health talks, produce health literature, and run general health education programmes.','egalitarian'); ?></p>
           <p><?php esc_html_e('Our work is driven by volunteers and supporters who believe that everyone — regardless of their circumstances — deserves dignity, safety, and access to good health.','egalitarian'); ?></p>
         </div>
@@ -71,7 +72,7 @@ get_header();
 
 <!-- Objects / legal basis -->
 <section class="py-20 bg-white">
-  <div class="max-w-site mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto text-center">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <span class="ea-reveal block text-teal text-xs font-bold uppercase tracking-widest mb-3 opacity-0"><?php esc_html_e('Our Objects','egalitarian'); ?></span>
     <h2 class="ea-reveal text-navy font-extrabold text-3xl sm:text-4xl mb-8 opacity-0" style="animation-delay:.1s"><?php esc_html_e('What We Stand For','egalitarian'); ?></h2>
     <div class="ea-reveal grid grid-cols-1 sm:grid-cols-2 gap-6 text-left opacity-0" style="animation-delay:.2s">

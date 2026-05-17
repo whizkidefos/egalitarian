@@ -74,7 +74,7 @@ $causes = new WP_Query([
           <h3 class="text-navy font-bold text-lg leading-snug mb-3">
             <a href="<?php the_permalink(); ?>" class="hover:text-teal transition-colors"><?php the_title(); ?></a>
           </h3>
-          <p class="text-gray-500 text-sm leading-relaxed flex-1 mb-5"><?php the_excerpt(); ?></p>
+          <p class="text-gray-500 text-sm leading-relaxed flex-1 mb-5"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( get_the_excerpt() ), 15, '...' ) ); ?></p>
           <a href="<?php the_permalink(); ?>" class="inline-flex items-center gap-1.5 text-teal font-semibold text-sm hover:text-navy transition-colors group">
             <?php esc_html_e('Learn more','egalitarian'); ?>
             <span class="w-4 h-4 group-hover:translate-x-1 transition-transform"><?php echo ea_icon('arrow'); ?></span>
@@ -101,7 +101,7 @@ $causes = new WP_Query([
           <span class="w-7 h-7"><?php echo ea_icon($c['icon']); ?></span>
         </div>
         <h3 class="text-navy font-bold text-xl mb-3"><?php echo esc_html($c['title']); ?></h3>
-        <p class="text-gray-500 text-sm leading-relaxed flex-1 mb-5"><?php echo esc_html($c['body']); ?></p>
+        <p class="text-gray-500 text-sm leading-relaxed flex-1 mb-5"><?php echo esc_html( wp_trim_words( $c['body'], 15, '...' ) ); ?></p>
         <a href="<?php echo esc_url(home_url('/causes/'.$c['slug'])); ?>" class="inline-flex items-center gap-1.5 text-teal font-semibold text-sm hover:text-navy transition-colors group">
           <?php esc_html_e('Learn more','egalitarian'); ?>
           <span class="w-4 h-4 group-hover:translate-x-1 transition-transform"><?php echo ea_icon('arrow'); ?></span>

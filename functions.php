@@ -284,6 +284,9 @@ function ea_icon( string $name ): string {
         'email'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ea-icon"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>',
         'phone'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ea-icon"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>',
         'location' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ea-icon"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
+        'users'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ea-icon"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>',
+        'calendar' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ea-icon"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zm-5-5H7v5h7v-5z"/></svg>',
+        'share'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ea-icon"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.44 9.31 6.77 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.77 0 1.44-.3 1.96-.77l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>',
     ];
 
     return $icons[ $name ] ?? '';
@@ -447,6 +450,7 @@ add_filter( 'theme_page_templates', function ( $templates ) {
     $templates['page-events.php']      = __( 'Events Page',      'egalitarian' );
     $templates['page-news.php']        = __( 'News Page',        'egalitarian' );
     $templates['page-donate.php']      = __( 'Donate Page',      'egalitarian' );
+    $templates['page-thank-you.php']   = __( 'Thank You Page',   'egalitarian' );
     $templates['page-get-involved.php']= __( 'Get Involved Page','egalitarian' );
     $templates['page-legal.php']       = __( 'Legal Page',       'egalitarian' );
     return $templates;
@@ -468,7 +472,7 @@ add_action( 'add_meta_boxes', function () {
     );
 } );
 
-function ea_event_meta_box( WP_Post $post ): void {
+function ea_event_meta_box( $post ) {
     wp_nonce_field( 'ea_event_meta', 'ea_event_nonce' );
     $date     = get_post_meta( $post->ID, '_ea_event_date',     true );
     $location = get_post_meta( $post->ID, '_ea_event_location', true );
@@ -492,7 +496,7 @@ function ea_event_meta_box( WP_Post $post ): void {
     <?php
 }
 
-add_action( 'save_post_ea_event', function ( int $post_id ) {
+add_action( 'save_post_ea_event', function ( $post_id ) {
     if ( ! isset( $_POST['ea_event_nonce'] ) || ! wp_verify_nonce( $_POST['ea_event_nonce'], 'ea_event_meta' ) ) return;
     if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
     if ( ! current_user_can( 'edit_post', $post_id ) ) return;
@@ -501,6 +505,121 @@ add_action( 'save_post_ea_event', function ( int $post_id ) {
         if ( isset( $_POST[ $field ] ) ) {
             update_post_meta( $post_id, '_' . $field, sanitize_text_field( $_POST[ $field ] ) );
         }
+    }
+} );
+
+
+/* =========================================================
+   11b. CAUSE POST META BOXES (Gallery, Dates, Locations)
+   ========================================================= */
+
+add_action( 'admin_enqueue_scripts', function ( $hook_suffix ) {
+    if ( ! in_array( $hook_suffix, [ 'post.php', 'post-new.php' ], true ) ) {
+        return;
+    }
+
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    if ( ! $screen || 'ea_cause' !== $screen->post_type ) {
+        return;
+    }
+
+    wp_enqueue_media();
+    wp_enqueue_script(
+        'ea-cause-admin',
+        EA_URI . '/assets/js/cause-admin.js',
+        [],
+        EA_VERSION,
+        true
+    );
+} );
+
+add_action( 'add_meta_boxes', function () {
+    add_meta_box(
+        'ea_cause_details',
+        __( 'Cause Details', 'egalitarian' ),
+        'ea_cause_details_meta_box',
+        'ea_cause',
+        'normal',
+        'high'
+    );
+    add_meta_box(
+        'ea_cause_gallery',
+        __( 'Photo Gallery', 'egalitarian' ),
+        'ea_cause_gallery_meta_box',
+        'ea_cause',
+        'normal',
+        'high'
+    );
+} );
+
+function ea_cause_details_meta_box( $post ) {
+    wp_nonce_field( 'ea_cause_meta', 'ea_cause_nonce' );
+    $start_date = get_post_meta( $post->ID, '_ea_cause_start_date', true );
+    $end_date   = get_post_meta( $post->ID, '_ea_cause_end_date',   true );
+    $locations  = get_post_meta( $post->ID, '_ea_cause_locations',  true );
+    ?>
+    <p style="margin-bottom:12px">
+        <label for="ea_cause_start_date" style="font-weight:600;display:block;margin-bottom:4px"><?php esc_html_e( 'Start Date (optional)', 'egalitarian' ); ?></label>
+        <input type="date" id="ea_cause_start_date" name="ea_cause_start_date" value="<?php echo esc_attr( $start_date ); ?>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+        <small style="color:#666;"><?php esc_html_e( 'When did this cause initiative begin?', 'egalitarian' ); ?></small>
+    </p>
+    <p style="margin-bottom:12px">
+        <label for="ea_cause_end_date" style="font-weight:600;display:block;margin-bottom:4px"><?php esc_html_e( 'End Date (optional)', 'egalitarian' ); ?></label>
+        <input type="date" id="ea_cause_end_date" name="ea_cause_end_date" value="<?php echo esc_attr( $end_date ); ?>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+        <small style="color:#666;"><?php esc_html_e( 'Leave blank for ongoing initiatives.', 'egalitarian' ); ?></small>
+    </p>
+    <p style="margin-bottom:0;">
+        <label for="ea_cause_locations" style="font-weight:600;display:block;margin-bottom:4px"><?php esc_html_e( 'Locations (comma-separated)', 'egalitarian' ); ?></label>
+        <textarea id="ea_cause_locations" name="ea_cause_locations" rows="3" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-family:monospace;"><?php echo esc_textarea( $locations ); ?></textarea>
+        <small style="color:#666;"><?php esc_html_e( 'E.g., Manchester, Birmingham, London', 'egalitarian' ); ?></small>
+    </p>
+    <?php
+}
+
+function ea_cause_gallery_meta_box( $post ) {
+    wp_nonce_field( 'ea_cause_gallery', 'ea_cause_gallery_nonce' );
+    $gallery_ids = get_post_meta( $post->ID, '_ea_cause_gallery_ids', true );
+    $gallery_ids = ! empty( $gallery_ids ) ? explode( ',', $gallery_ids ) : [];
+    ?>
+    <div style="margin-bottom:12px;">
+        <p style="margin-bottom:8px;">
+            <strong><?php esc_html_e( 'Add Images to Gallery', 'egalitarian' ); ?></strong>
+            <button type="button" id="ea-gallery-button" class="button button-primary" style="margin-left:8px;">
+                <?php esc_html_e( 'Select Images', 'egalitarian' ); ?>
+            </button>
+        </p>
+        <div id="ea-gallery-preview" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;">
+            <?php foreach ( $gallery_ids as $image_id ) :
+                if ( ! $image_id ) continue;
+                $thumb = wp_get_attachment_image_url( $image_id, 'thumbnail' );
+            ?>
+            <div class="ea-gallery-item" data-id="<?php echo esc_attr( $image_id ); ?>" style="position:relative; width:100px; height:100px; background:#f0f0f0; border-radius:4px; overflow:hidden;">
+                <img src="<?php echo esc_url( $thumb ); ?>" style="width:100%; height:100%; object-fit:cover;">
+                <button type="button" class="ea-gallery-remove" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:16px;">×</button>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <input type="hidden" id="ea-gallery-ids" name="ea_cause_gallery_ids" value="<?php echo esc_attr( implode( ',', $gallery_ids ) ); ?>">
+    </div>
+    <?php
+}
+
+add_action( 'save_post_ea_cause', function ( $post_id ) {
+    if ( ! isset( $_POST['ea_cause_nonce'] ) || ! wp_verify_nonce( $_POST['ea_cause_nonce'], 'ea_cause_meta' ) ) return;
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+    if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+    if ( isset( $_POST['ea_cause_start_date'] ) ) {
+        update_post_meta( $post_id, '_ea_cause_start_date', sanitize_text_field( $_POST['ea_cause_start_date'] ) );
+    }
+    if ( isset( $_POST['ea_cause_end_date'] ) ) {
+        update_post_meta( $post_id, '_ea_cause_end_date', sanitize_text_field( $_POST['ea_cause_end_date'] ) );
+    }
+    if ( isset( $_POST['ea_cause_locations'] ) ) {
+        update_post_meta( $post_id, '_ea_cause_locations', sanitize_text_field( $_POST['ea_cause_locations'] ) );
+    }
+    if ( isset( $_POST['ea_cause_gallery_ids'] ) ) {
+        update_post_meta( $post_id, '_ea_cause_gallery_ids', sanitize_text_field( $_POST['ea_cause_gallery_ids'] ) );
     }
 } );
 
@@ -696,7 +815,9 @@ function ea_paypal_url( float $amount = 0, string $item = '', bool $recurring = 
         $args['p3']            = '1';
         $args['t3']            = 'M'; // Monthly
         $args['src']           = '1'; // Recurring
-        $args['sra']           = '1';
+        $args['sra']           = '1'; // Reattempt on failure
+        $args['no_shipping']   = '2'; // Required for subscriptions
+        $args['modify']        = '0'; // New subscription
     } else {
         $args['cmd']           = '_donations';
         if ( $amount > 0 ) {
@@ -713,6 +834,172 @@ function ea_paypal_url( float $amount = 0, string $item = '', bool $recurring = 
 function ea_paypal_configured(): bool {
     return ! empty( ea_paypal_email() );
 }
+
+
+/* =========================================================
+   14b. PAYPAL IPN HANDLER & DONATION LOGGING
+   ========================================================= */
+
+/**
+ * Create the donations logging table on theme activation.
+ */
+function ea_create_donations_table(): void {
+    global $wpdb;
+    $table_name      = $wpdb->prefix . 'ea_donations';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        transaction_id varchar(255) NOT NULL UNIQUE,
+        payer_email varchar(255) DEFAULT '' NOT NULL,
+        amount decimal(10,2) NOT NULL,
+        currency_code varchar(3) DEFAULT 'GBP' NOT NULL,
+        donation_type varchar(20) DEFAULT 'one-time' NOT NULL,
+        status varchar(20) DEFAULT 'verified' NOT NULL,
+        donation_date datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        ip_address varchar(45) DEFAULT '' NOT NULL,
+        raw_data longtext,
+        PRIMARY KEY (id),
+        UNIQUE KEY tx_id (transaction_id),
+        KEY donation_date (donation_date)
+    ) $charset_collate;";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( $sql );
+}
+add_action( 'after_switch_theme', 'ea_create_donations_table' );
+add_action( 'init', function() {
+    if ( ! get_transient( 'ea_donations_table_check' ) ) {
+        ea_create_donations_table();
+        set_transient( 'ea_donations_table_check', 1, HOUR_IN_SECONDS );
+    }
+} );
+
+/**
+ * Handle PayPal IPN callbacks.
+ * 
+ * PayPal sends POST data to notify_url when a donation/subscription transaction occurs.
+ * This handler verifies the transaction and logs the donation.
+ */
+add_action( 'init', function() {
+    if ( empty( $_GET['ea_paypal_ipn'] ) ) return;
+    
+    // Verify it's actually from PayPal
+    $ipn_data = wp_unslash( $_POST );
+    
+    if ( empty( $ipn_data['txn_id'] ) ) {
+        status_header( 400 );
+        exit( 'Missing transaction ID' );
+    }
+
+    // Log the raw POST data for debugging
+    $raw_data = wp_json_encode( $ipn_data );
+    
+    // Verify with PayPal (simplified - in production, use IPN verification)
+    $paypal_url = 'sandbox' === get_theme_mod( 'ea_paypal_mode' )
+        ? 'https://www.sandbox.paypal.com/cgi-bin/webscr'
+        : 'https://www.paypal.com/cgi-bin/webscr';
+
+    $verify_data = array_merge( [ 'cmd' => '_notify-validate' ], $ipn_data );
+    
+    $response = wp_remote_post( $paypal_url, [
+        'body'      => $verify_data,
+        'sslverify' => true,
+        'timeout'   => 30,
+    ] );
+
+    if ( is_wp_error( $response ) ) {
+        // Log error but don't fail - PayPal may retry
+        error_log( 'PayPal IPN verification failed: ' . $response->get_error_message() );
+        status_header( 500 );
+        exit( 'Verification failed' );
+    }
+
+    // Check PayPal's response
+    if ( 'VERIFIED' !== wp_remote_retrieve_body( $response ) ) {
+        error_log( 'PayPal IPN verification returned: ' . wp_remote_retrieve_body( $response ) );
+        status_header( 400 );
+        exit( 'Not verified' );
+    }
+
+    // Verify the email matches our configured email
+    $expected_email = ea_paypal_email();
+    $received_email = sanitize_email( $ipn_data['receiver_email'] ?? '' );
+    
+    if ( $received_email !== $expected_email ) {
+        error_log( "PayPal IPN email mismatch: expected {$expected_email}, got {$received_email}" );
+        status_header( 400 );
+        exit( 'Email mismatch' );
+    }
+
+    // Log the donation
+    global $wpdb;
+    $txn_id = sanitize_text_field( $ipn_data['txn_id'] );
+    
+    // Check if already processed
+    $existing = $wpdb->get_row(
+        $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}ea_donations WHERE transaction_id = %s", $txn_id )
+    );
+    
+    if ( $existing ) {
+        // Already processed, just acknowledge
+        status_header( 200 );
+        exit( 'OK' );
+    }
+
+    // Determine donation type
+    $donation_type = 'one-time';
+    if ( ! empty( $ipn_data['recurring'] ) && '1' === $ipn_data['recurring'] ) {
+        $donation_type = 'recurring';
+    } elseif ( ! empty( $ipn_data['subscr_id'] ) ) {
+        $donation_type = 'subscription';
+    }
+
+    // Insert into donations table
+    $insert = $wpdb->insert(
+        $wpdb->prefix . 'ea_donations',
+        [
+            'transaction_id' => $txn_id,
+            'payer_email'    => sanitize_email( $ipn_data['payer_email'] ?? '' ),
+            'amount'         => floatval( $ipn_data['mc_gross'] ?? 0 ),
+            'currency_code'  => sanitize_text_field( $ipn_data['mc_currency'] ?? 'GBP' ),
+            'donation_type'  => $donation_type,
+            'status'         => 'verified',
+            'ip_address'     => sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '' ),
+            'raw_data'       => $raw_data,
+        ],
+        [ '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s' ]
+    );
+
+    if ( ! $insert ) {
+        error_log( 'Failed to insert donation: ' . $wpdb->last_error );
+        status_header( 500 );
+        exit( 'Database error' );
+    }
+
+    // Send admin notification email
+    $admin_email = get_option( 'admin_email' );
+    $amount = floatval( $ipn_data['mc_gross'] ?? 0 );
+    $currency = sanitize_text_field( $ipn_data['mc_currency'] ?? 'GBP' );
+    $payer = sanitize_email( $ipn_data['payer_email'] ?? 'unknown' );
+    
+    wp_mail(
+        $admin_email,
+        sprintf( __( 'New Donation Received: %s%s', 'egalitarian' ), $currency, $amount ),
+        sprintf(
+            __( "A new donation has been received:\n\nAmount: %s%s\nPayer: %s\nType: %s\nTransaction ID: %s\n\nThank you for the generous support!", 'egalitarian' ),
+            $currency,
+            $amount,
+            $payer,
+            ucfirst( str_replace( '-', ' ', $donation_type ) ),
+            $txn_id
+        )
+    );
+
+    // Success
+    status_header( 200 );
+    exit( 'OK' );
+}, 1 );
 
 
 /* =========================================================

@@ -8,6 +8,7 @@
  */
 
 $has_thumb = has_post_thumbnail();
+$is_cause  = 'ea_cause' === get_post_type();
 ?>
 <article id="post-<?php the_ID(); ?>" <?php post_class( 'ea-card-post bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-1.5 transition-all duration-300 flex flex-col border border-gray-100' ); ?> aria-labelledby="post-title-<?php the_ID(); ?>">
 
@@ -25,18 +26,20 @@ $has_thumb = has_post_thumbnail();
         <div class="flex items-center gap-3 mb-4 flex-wrap">
             <?php
             $cats = get_the_category();
-            if ( $cats ) :
+            if ( $cats && ! $is_cause ) :
             ?>
             <a href="<?php echo esc_url( get_category_link( $cats[0]->term_id ) ); ?>"
                class="inline-block bg-teal/10 text-teal text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full hover:bg-teal hover:text-white transition-colors">
                 <?php echo esc_html( $cats[0]->name ); ?>
             </a>
             <?php endif; ?>
+            <?php if ( ! $is_cause ) : ?>
             <time datetime="<?php echo esc_attr( get_the_date( 'c' ) ); ?>" class="text-gray-400 text-xs">
                 <?php echo esc_html( ea_post_date() ); ?>
             </time>
             <span class="text-gray-300 text-xs hidden sm:inline" aria-hidden="true">·</span>
             <span class="text-gray-400 text-xs hidden sm:inline"><?php echo esc_html( ea_reading_time() ); ?></span>
+            <?php endif; ?>
         </div>
 
         <!-- Title -->
@@ -48,7 +51,13 @@ $has_thumb = has_post_thumbnail();
 
         <!-- Excerpt -->
         <p class="text-gray-500 text-sm leading-relaxed line-clamp-3 flex-1 mb-5">
-            <?php the_excerpt(); ?>
+            <?php
+            if ( $is_cause ) {
+                echo esc_html( wp_trim_words( wp_strip_all_tags( get_the_excerpt() ), 15, '...' ) );
+            } else {
+                the_excerpt();
+            }
+            ?>
         </p>
 
         <!-- Read more -->
