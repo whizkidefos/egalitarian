@@ -10,6 +10,14 @@ define( 'EA_VERSION', '1.0.0' );
 define( 'EA_DIR',     get_template_directory() );
 define( 'EA_URI',     get_template_directory_uri() );
 
+/**
+ * Version static assets by file modification time to avoid stale caching.
+ */
+function ea_asset_version( string $relative_path ): string {
+    $file_path = EA_DIR . $relative_path;
+    return file_exists( $file_path ) ? (string) filemtime( $file_path ) : EA_VERSION;
+}
+
 /* =========================================================
    1. THEME SETUP
    ========================================================= */
@@ -69,7 +77,7 @@ add_action( 'wp_enqueue_scripts', function () {
         'ea-main',
         EA_URI . '/assets/css/main.css',
         [ 'ea-google-fonts' ],
-        EA_VERSION
+        ea_asset_version( '/assets/css/main.css' )
     );
 
     // Main JS
@@ -77,7 +85,7 @@ add_action( 'wp_enqueue_scripts', function () {
         'ea-main',
         EA_URI . '/assets/js/main.js',
         [],
-        EA_VERSION,
+        ea_asset_version( '/assets/js/main.js' ),
         true   // footer
     );
 
@@ -99,7 +107,7 @@ add_action( 'enqueue_block_editor_assets', function () {
         'ea-editor',
         EA_URI . '/assets/css/main.css',
         [],
-        EA_VERSION
+        ea_asset_version( '/assets/css/main.css' )
     );
     wp_enqueue_style(
         'ea-google-fonts',
